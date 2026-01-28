@@ -14,27 +14,35 @@ import com.mediavision.app.MainActivity
 import com.mediavision.app.R
 import kotlinx.coroutines.*
 import okhttp3.*
+import org.json.JSONObject
 import java.io.IOException
 import java.text.SimpleDateFormat
 import java.util.*
+import java.util.concurrent.atomic.AtomicInteger
 
 class Esp32MonitorService : Service() {
 
     private val serviceScope = CoroutineScope(SupervisorJob() + Dispatchers.IO)
     private var monitoringJob: Job? = null
     private var esp32Url: String = ""
-    private val client = OkHttpClient.Builder()
-        .connectTimeout(10, java.util.concurrent.TimeUnit.SECONDS)
-        .readTimeout(10, java.util.concurrent.TimeUnit.SECONDS)
-        .build()
-
+    private val notificationIdCounter = AtomicInteger(NOTIFICATION_ID)
+    
+    // Companion object to hold singleton HTTP client
     companion object {
         const val ACTION_START_MONITORING = "com.mediavision.app.action.START_MONITORING"
         const val ACTION_STOP_MONITORING = "com.mediavision.app.action.STOP_MONITORING"
         const val EXTRA_ESP32_URL = "com.mediavision.app.extra.ESP32_URL"
-        private const val NOTIFICATION_ID = 1001
+        private const val NOTIFICATION_ID = 2000
         private const val FOREGROUND_NOTIFICATION_ID = 1000
         private const val POLLING_INTERVAL = 5000L // 5 seconds
+        
+        // Singleton HTTP client
+        private val client by lazy {
+            OkHttpClient.Builder()
+                .connectTimeout(10, java.util.concurrent.TimeUnit.SECONDS)
+                .readTimeout(10, java.util.concurrent.TimeUnit.SECONDS)
+                .build()
+        }
     }
 
     override fun onBind(intent: Intent?): IBinder? = null
@@ -50,7 +58,12 @@ class Esp32MonitorService : Service() {
             }
             ACTION_STOP_MONITORING -> {
                 stopMonitoring()
-                stopForeground(true)
+                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.N) {
+                    stopForeground(STOP_FOREGROUND_REMOVE)
+                } else {
+                    @Suppress("DEPRECATION")
+                    stopForeground(true)
+                }
                 stopSelf()
             }
         }
@@ -118,15 +131,26 @@ class Esp32MonitorService : Service() {
                     if (response.isSuccessful) {
                         val body = response.body?.string() ?: ""
                         
-                        // Check if ESP32 is sending an alert
-                        // The ESP32 should return JSON like: {"alert": true, "message": "Motion detected"}
-                        // or simply return "1" or "true" for alert
-                        if (body.contains("true", ignoreCase = true) ||
-                            body.contains("\"alert\":true", ignoreCase = true) ||
-                            body.trim() == "1" ||
-                            body.contains("alert", ignoreCase = true)
-                        ) {
-                            sendAlertNotification(body)
+                        // Parse the response more carefully
+                        var shouldAlert = false
+                        var message = ""
+                        
+                        // Try to parse as JSON first
+                        try {
+                            val json = JSONObject(body)
+                            shouldAlert = json.optBoolean("alert", false)
+                            message = json.optString("message", "Alert detected from ESP32")
+                        } catch (e: Exception) {
+                            // Not JSON, check for simple responses
+                            val trimmed = body.trim()
+                            if (trimmed == "1" || trimmed.equals("true", ignoreCase = true)) {
+                                shouldAlert = true
+                                message = "Alert detected from ESP32"
+                            }
+                        }
+                        
+                        if (shouldAlert) {
+                            sendAlertNotification(message)
                         }
                     }
                 }
@@ -178,7 +202,9 @@ class Esp32MonitorService : Service() {
             .setDefaults(Notification.DEFAULT_SOUND or Notification.DEFAULT_LIGHTS)
             .build()
 
-        notificationManager.notify(NOTIFICATION_ID, notification)
+        // Use unique notification ID for each alert
+        val uniqueId = notificationIdCounter.incrementAndGet()
+        notificationManager.notify(uniqueId, notification)
     }
 
     override fun onDestroy() {

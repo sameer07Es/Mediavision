@@ -147,6 +147,12 @@ class MainActivity : AppCompatActivity() {
     }
 
     private fun connectToRtsp(url: String) {
+        // Validate URL format
+        if (!url.startsWith("rtsp://") && !url.startsWith("rtsps://")) {
+            Toast.makeText(this, "Invalid RTSP URL format", Toast.LENGTH_SHORT).show()
+            return
+        }
+
         try {
             val mediaItem = MediaItem.fromUri(url)
             val rtspMediaSource = RtspMediaSource.Factory()
@@ -271,10 +277,14 @@ class MainActivity : AppCompatActivity() {
             recordingThread = Thread {
                 val buffer = ByteArray(bufferSize)
                 while (isRecording) {
-                    val read = audioRecord?.read(buffer, 0, buffer.size) ?: 0
+                    val read = audioRecord?.read(buffer, 0, buffer.size) ?: -1
                     if (read > 0) {
                         // Process audio data here if needed
                         // For now, we're just capturing it
+                    } else if (read < 0) {
+                        // Error occurred during read, stop recording
+                        isRecording = false
+                        break
                     }
                 }
             }
@@ -292,7 +302,8 @@ class MainActivity : AppCompatActivity() {
 
     private fun stopAudioRecording() {
         isRecording = false
-        recordingThread?.join()
+        // Join with timeout to prevent ANR
+        recordingThread?.join(1000)
 
         audioRecord?.stop()
         audioRecord?.release()
@@ -305,6 +316,12 @@ class MainActivity : AppCompatActivity() {
     }
 
     private fun startEsp32Monitoring(url: String) {
+        // Validate URL format
+        if (!url.startsWith("http://") && !url.startsWith("https://")) {
+            Toast.makeText(this, "Invalid URL format. Use http:// or https://", Toast.LENGTH_SHORT).show()
+            return
+        }
+
         val intent = Intent(this, Esp32MonitorService::class.java).apply {
             action = Esp32MonitorService.ACTION_START_MONITORING
             putExtra(Esp32MonitorService.EXTRA_ESP32_URL, url)
@@ -319,7 +336,7 @@ class MainActivity : AppCompatActivity() {
         binding.startMonitoringButton.isEnabled = false
         binding.stopMonitoringButton.isEnabled = true
         binding.esp32UrlInput.isEnabled = false
-        binding.esp32StatusText.text = "Monitoring: Active"
+        binding.esp32StatusText.text = getString(R.string.monitoring_active)
         Toast.makeText(this, "ESP32 monitoring started", Toast.LENGTH_SHORT).show()
     }
 
@@ -332,7 +349,7 @@ class MainActivity : AppCompatActivity() {
         binding.startMonitoringButton.isEnabled = true
         binding.stopMonitoringButton.isEnabled = false
         binding.esp32UrlInput.isEnabled = true
-        binding.esp32StatusText.text = "Monitoring: Stopped"
+        binding.esp32StatusText.text = getString(R.string.monitoring_stopped)
         Toast.makeText(this, "ESP32 monitoring stopped", Toast.LENGTH_SHORT).show()
     }
 

@@ -22,4 +22,6 @@
     <string name="audio_permission_required">Audio permission is required for audio recording</string>
     <string name="grant">Grant</string>
     <string name="cancel">Cancel</string>
+    <string name="monitoring_active">Monitoring: Active</string>
+    <string name="monitoring_stopped">Monitoring: Stopped</string>
 </resources>
