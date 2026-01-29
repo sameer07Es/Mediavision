@@ -1,0 +1,343 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "Mediavision Configuration",
+  "type": "object",
+  "properties": {
+    "devices": {
+      "type": "array",
+      "description": "List of RTSP devices to connect to",
+      "items": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "description": "Unique device identifier"
+          },
+          "name": {
+            "type": "string",
+            "description": "Human-readable device name"
+          },
+          "type": {
+            "type": "string",
+            "enum": ["amb82-mini", "ip-camera", "esp32-cam", "raspberry-pi", "generic"],
+            "description": "Device type"
+          },
+          "rtsp": {
+            "type": "object",
+            "required": ["url"],
+            "properties": {
+              "url": {
+                "type": "string",
+                "pattern": "^rtsp://",
+                "description": "RTSP stream URL"
+              },
+              "transport": {
+                "type": "string",
+                "enum": ["tcp", "udp"],
+                "default": "tcp",
+                "description": "Transport protocol"
+              },
+              "authentication": {
+                "type": "object",
+                "properties": {
+                  "username": {
+                    "type": "string"
+                  },
+                  "password": {
+                    "type": "string"
+                  }
+                }
+              },
+              "options": {
+                "type": "object",
+                "properties": {
+                  "reconnect": {
+                    "type": "boolean",
+                    "default": true,
+                    "description": "Auto-reconnect on disconnect"
+                  },
+                  "reconnectDelay": {
+                    "type": "integer",
+                    "default": 5000,
+                    "description": "Delay between reconnect attempts (ms)"
+                  },
+                  "timeout": {
+                    "type": "integer",
+                    "default": 10000,
+                    "description": "Connection timeout (ms)"
+                  },
+                  "keepAlive": {
+                    "type": "boolean",
+                    "default": true,
+                    "description": "Send keep-alive packets"
+                  },
+                  "bufferSize": {
+                    "type": "integer",
+                    "default": 1048576,
+                    "description": "Buffer size in bytes"
+                  }
+                }
+              }
+            }
+          },
+          "video": {
+            "type": "object",
+            "properties": {
+              "codec": {
+                "type": "string",
+                "enum": ["H.264", "H.265", "MJPEG"],
+                "description": "Video codec"
+              },
+              "resolution": {
+                "type": "string",
+                "pattern": "^\\d+x\\d+$",
+                "description": "Video resolution (e.g., 1920x1080)"
+              },
+              "fps": {
+                "type": "integer",
+                "minimum": 1,
+                "maximum": 60,
+                "description": "Frames per second"
+              }
+            }
+          },
+          "metadata": {
+            "type": "object",
+            "properties": {
+              "location": {
+                "type": "string",
+                "description": "Physical location"
+              },
+              "tags": {
+                "type": "array",
+                "items": {
+                  "type": "string"
+                },
+                "description": "Device tags for filtering"
+              }
+            }
+          }
+        },
+        "required": ["id", "name", "rtsp"]
+      }
+    },
+    "notifications": {
+      "type": "object",
+      "properties": {
+        "enabled": {
+          "type": "boolean",
+          "default": true,
+          "description": "Enable notification system"
+        },
+        "methods": {
+          "type": "object",
+          "properties": {
+            "webhook": {
+              "type": "object",
+              "properties": {
+                "enabled": {
+                  "type": "boolean",
+                  "default": false
+                },
+                "url": {
+                  "type": "string",
+                  "format": "uri",
+                  "description": "Webhook endpoint URL"
+                },
+                "method": {
+                  "type": "string",
+                  "enum": ["POST", "PUT"],
+                  "default": "POST"
+                },
+                "headers": {
+                  "type": "object",
+                  "description": "Custom HTTP headers"
+                },
+                "timeout": {
+                  "type": "integer",
+                  "default": 5000,
+                  "description": "Request timeout (ms)"
+                },
+                "retries": {
+                  "type": "integer",
+                  "default": 3,
+                  "description": "Number of retry attempts"
+                },
+                "retryDelay": {
+                  "type": "integer",
+                  "default": 1000,
+                  "description": "Delay between retries (ms)"
+                }
+              }
+            },
+            "mqtt": {
+              "type": "object",
+              "properties": {
+                "enabled": {
+                  "type": "boolean",
+                  "default": false
+                },
+                "broker": {
+                  "type": "string",
+                  "description": "MQTT broker URL"
+                },
+                "clientId": {
+                  "type": "string",
+                  "default": "mediavision"
+                },
+                "topic": {
+                  "type": "string",
+                  "default": "mediavision/notifications"
+                },
+                "qos": {
+                  "type": "integer",
+                  "enum": [0, 1, 2],
+                  "default": 1
+                },
+                "retain": {
+                  "type": "boolean",
+                  "default": false
+                },
+                "authentication": {
+                  "type": "object",
+                  "properties": {
+                    "username": {
+                      "type": "string"
+                    },
+                    "password": {
+                      "type": "string"
+                    }
+                  }
+                }
+              }
+            },
+            "email": {
+              "type": "object",
+              "properties": {
+                "enabled": {
+                  "type": "boolean",
+                  "default": false
+                },
+                "smtp": {
+                  "type": "object",
+                  "properties": {
+                    "host": {
+                      "type": "string"
+                    },
+                    "port": {
+                      "type": "integer"
+                    },
+                    "secure": {
+                      "type": "boolean"
+                    },
+                    "auth": {
+                      "type": "object",
+                      "properties": {
+                        "user": {
+                          "type": "string"
+                        },
+                        "pass": {
+                          "type": "string"
+                        }
+                      }
+                    }
+                  }
+                },
+                "from": {
+                  "type": "string",
+                  "format": "email"
+                },
+                "to": {
+                  "type": "array",
+                  "items": {
+                    "type": "string",
+                    "format": "email"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "filters": {
+          "type": "object",
+          "properties": {
+            "minSeverity": {
+              "type": "string",
+              "enum": ["info", "warning", "error", "critical"],
+              "default": "info"
+            },
+            "types": {
+              "type": "array",
+              "items": {
+                "type": "string"
+              },
+              "description": "Event types to include (supports wildcards)"
+            },
+            "exclude": {
+              "type": "array",
+              "items": {
+                "type": "string"
+              },
+              "description": "Event types to exclude"
+            },
+            "devices": {
+              "type": "array",
+              "items": {
+                "type": "string"
+              },
+              "description": "Device IDs to filter"
+            }
+          }
+        },
+        "rateLimit": {
+          "type": "object",
+          "properties": {
+            "enabled": {
+              "type": "boolean",
+              "default": true
+            },
+            "maxPerMinute": {
+              "type": "integer",
+              "default": 60
+            },
+            "maxPerHour": {
+              "type": "integer",
+              "default": 1000
+            }
+          }
+        }
+      }
+    },
+    "server": {
+      "type": "object",
+      "properties": {
+        "host": {
+          "type": "string",
+          "default": "0.0.0.0"
+        },
+        "port": {
+          "type": "integer",
+          "default": 8080
+        },
+        "apiPrefix": {
+          "type": "string",
+          "default": "/api"
+        }
+      }
+    },
+    "logging": {
+      "type": "object",
+      "properties": {
+        "level": {
+          "type": "string",
+          "enum": ["debug", "info", "warn", "error"],
+          "default": "info"
+        },
+        "file": {
+          "type": "string",
+          "description": "Log file path"
+        }
+      }
+    }
+  }
+}
