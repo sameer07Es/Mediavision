@@ -1,0 +1,125 @@
+{
+  "devices": [
+    {
+      "id": "amb82-001",
+      "name": "Front Door Camera",
+      "type": "amb82-mini",
+      "rtsp": {
+        "url": "rtsp://192.168.1.100:554/stream",
+        "transport": "tcp",
+        "options": {
+          "reconnect": true,
+          "reconnectDelay": 5000,
+          "timeout": 10000,
+          "keepAlive": true
+        }
+      },
+      "video": {
+        "codec": "H.264",
+        "resolution": "1920x1080",
+        "fps": 30
+      },
+      "metadata": {
+        "location": "Front Door",
+        "tags": ["security", "entrance"]
+      }
+    },
+    {
+      "id": "amb82-002",
+      "name": "Back Yard Camera",
+      "type": "amb82-mini",
+      "rtsp": {
+        "url": "rtsp://192.168.1.101:554/stream",
+        "transport": "tcp",
+        "authentication": {
+          "username": "admin",
+          "password": "password123"
+        },
+        "options": {
+          "reconnect": true,
+          "reconnectDelay": 5000,
+          "timeout": 10000,
+          "keepAlive": true
+        }
+      },
+      "video": {
+        "codec": "H.264",
+        "resolution": "1280x720",
+        "fps": 25
+      },
+      "metadata": {
+        "location": "Back Yard",
+        "tags": ["security", "outdoor"]
+      }
+    }
+  ],
+  "notifications": {
+    "enabled": true,
+    "methods": {
+      "webhook": {
+        "enabled": true,
+        "url": "https://your-server.com/webhook",
+        "method": "POST",
+        "headers": {
+          "Authorization": "Bearer your-api-token",
+          "Content-Type": "application/json"
+        },
+        "timeout": 5000,
+        "retries": 3,
+        "retryDelay": 1000
+      },
+      "mqtt": {
+        "enabled": true,
+        "broker": "mqtt://broker.example.com:1883",
+        "clientId": "mediavision",
+        "topic": "mediavision/notifications",
+        "qos": 1,
+        "retain": false,
+        "authentication": {
+          "username": "mqtt-user",
+          "password": "mqtt-pass"
+        }
+      },
+      "email": {
+        "enabled": false,
+        "smtp": {
+          "host": "smtp.gmail.com",
+          "port": 587,
+          "secure": false,
+          "auth": {
+            "user": "notifications@example.com",
+            "pass": "app-password"
+          }
+        },
+        "from": "Mediavision <notifications@example.com>",
+        "to": ["admin@example.com"]
+      }
+    },
+    "filters": {
+      "minSeverity": "info",
+      "types": [
+        "stream.*",
+        "detection.*",
+        "system.*"
+      ],
+      "exclude": [
+        "stream.quality.changed"
+      ],
+      "devices": ["amb82-001", "amb82-002"]
+    },
+    "rateLimit": {
+      "enabled": true,
+      "maxPerMinute": 60,
+      "maxPerHour": 1000
+    }
+  },
+  "server": {
+    "host": "0.0.0.0",
+    "port": 8080,
+    "apiPrefix": "/api"
+  },
+  "logging": {
+    "level": "info",
+    "file": "/var/log/mediavision/app.log"
+  }
+}
