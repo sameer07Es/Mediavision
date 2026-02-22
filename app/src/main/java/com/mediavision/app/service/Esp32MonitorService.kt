@@ -85,9 +85,9 @@ class Esp32MonitorService : Service() {
         )
 
         return NotificationCompat.Builder(this, MainActivity.NOTIFICATION_CHANNEL_ID)
-            .setContentTitle("ESP32 Monitoring")
-            .setContentText("Monitoring ESP32 for alerts...")
-            .setSmallIcon(R.drawable.ic_launcher)
+            .setContentTitle(getString(R.string.foreground_notification_title))
+            .setContentText(getString(R.string.foreground_notification_text))
+            .setSmallIcon(R.drawable.ic_notification)
             .setContentIntent(pendingIntent)
             .setOngoing(true)
             .build()
@@ -192,7 +192,7 @@ class Esp32MonitorService : Service() {
         )
 
         val notification = NotificationCompat.Builder(this, MainActivity.NOTIFICATION_CHANNEL_ID)
-            .setSmallIcon(R.drawable.ic_launcher)
+            .setSmallIcon(R.drawable.ic_notification)
             .setCustomContentView(notificationLayout)
             .setCustomBigContentView(notificationLayout)
             .setContentIntent(pendingIntent)

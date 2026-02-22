@@ -24,4 +24,9 @@
     <string name="cancel">Cancel</string>
     <string name="monitoring_active">Monitoring: Active</string>
     <string name="monitoring_stopped">Monitoring: Stopped</string>
+    <string name="rtsp_section_title">RTSP Video Stream</string>
+    <string name="audio_section_title">Audio Input</string>
+    <string name="esp32_section_title">ESP32 Alert Monitoring</string>
+    <string name="foreground_notification_title">ESP32 Monitoring</string>
+    <string name="foreground_notification_text">Monitoring ESP32 for alerts…</string>
 </resources>
